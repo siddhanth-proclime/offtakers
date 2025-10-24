@@ -140,7 +140,7 @@ if len(filtered_df) > 0:
         margin=dict(r=200)
     )
     
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
     
 else:
     st.warning("No data available for the selected filters. Please adjust your filter criteria.")
