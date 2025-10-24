@@ -11,6 +11,9 @@ st.markdown("Carbon Credits Retirement Analysis - to be integrated")
 # Read the CSV file
 df = pd.read_csv('vcus.csv', low_memory=False)
 
+# Drop rows where 'Retirement/Cancellation Date' is NaT
+df = df.dropna(subset=['Retirement/Cancellation Date'])
+
 # Data preprocessing
 df['Retirement/Cancellation Date'] = pd.to_datetime(df['Retirement/Cancellation Date'], errors='coerce')
 df['Retirement Year'] = df['Retirement/Cancellation Date'].dt.year
@@ -20,6 +23,23 @@ if not pd.api.types.is_numeric_dtype(df['Quantity Issued']):
 
 # Sidebar filters
 st.sidebar.header("Filters")
+
+# Date Granularity Selection
+date_granularity = st.sidebar.radio(
+    "Select Date Granularity",
+    options=['Year', 'Quarter', 'Month'],
+    index=0
+)
+
+# Create the appropriate date column based on granularity
+if date_granularity == 'Year':
+    df['Date Period'] = df['Retirement/Cancellation Date'].dt.year.astype(int).astype(str)
+elif date_granularity == 'Quarter':
+    df['Date Period'] = (df['Retirement/Cancellation Date'].dt.year.astype(int).astype(str) + 
+                         ' Q' + df['Retirement/Cancellation Date'].dt.quarter.astype(int).astype(str))
+else:  # Month
+    df['Date Period'] = (df['Retirement/Cancellation Date'].dt.year.astype(str) + 
+                        '-' + df['Retirement/Cancellation Date'].dt.month.astype(str).str.zfill(2))
 
 # Year range slider
 min_year = int(df['Retirement Year'].min()) if not df['Retirement Year'].isna().all() else 2020
@@ -79,14 +99,13 @@ if len(selected_countries) > 0:
 if len(filtered_df) > 0:
     pivot_table = filtered_df.pivot_table(
         index='Retirement Beneficiary',
-        columns='Retirement Year',
+        columns='Date Period',
         values='Quantity Issued',
         aggfunc='sum',
         fill_value=0
     )
     
-    # Adjust column names and add Grand Total
-    pivot_table.columns = [str(int(c)) for c in pivot_table.columns]
+    # Add Grand Total
     pivot_table['Grand Total'] = pivot_table.sum(axis=1)
     pivot_table = pivot_table.sort_values('Grand Total', ascending=False)
     
@@ -97,28 +116,27 @@ if len(filtered_df) > 0:
     with col2:
         st.metric("Total Credits Issued", f"{pivot_table['Grand Total'].sum():,.0f}")
     with col3:
-        st.metric("Years Covered", len([c for c in pivot_table.columns if c != 'Grand Total']))
+        periods_count = len([c for c in pivot_table.columns if c != 'Grand Total'])
+        period_label = f"{date_granularity}s" if date_granularity != 'Month' else "Months"
+        st.metric(f"{period_label} Covered", periods_count)
     
     # Display pivot table
-    st.subheader("Retirement Beneficiaries Pivot Table")
-    st.dataframe(pivot_table, width='stretch', height=400)
+    st.subheader(f"Retirement Beneficiaries Pivot Table (by {date_granularity})")
+    st.dataframe(pivot_table, use_container_width=True, height=400)
     
     # Top 5 Beneficiaries Trend Chart
-    st.subheader("Top 5 Retirement Beneficiaries - Trend Analysis")
+    st.subheader(f"Top 5 Retirement Beneficiaries - Trend Analysis (by {date_granularity})")
     
     top_5 = pivot_table.head(5)
-    year_columns = [col for col in pivot_table.columns if col != 'Grand Total']
+    period_columns = [col for col in pivot_table.columns if col != 'Grand Total']
     
     # Create line chart using Plotly
     fig = go.Figure()
-
-    # Convert year columns to string (categorical)
-    year_columns = [str(int(c)) for c in pivot_table.columns if c != 'Grand Total']
     
     for beneficiary in top_5.index:
         fig.add_trace(go.Scatter(
-            x=year_columns,
-            y=top_5.loc[beneficiary, year_columns].values,
+            x=period_columns,
+            y=top_5.loc[beneficiary, period_columns].values,
             mode='lines+markers',
             name=beneficiary,
             line=dict(width=2),
@@ -126,7 +144,7 @@ if len(filtered_df) > 0:
         ))
     
     fig.update_layout(
-        xaxis_title="Year",
+        xaxis_title=date_granularity,
         yaxis_title="Quantity Issued",
         hovermode='x unified',
         legend=dict(
@@ -142,5 +160,3 @@ if len(filtered_df) > 0:
     
     st.plotly_chart(fig, use_container_width=True)
     
-else:
-    st.warning("No data available for the selected filters. Please adjust your filter criteria.")
