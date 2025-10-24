@@ -9,7 +9,7 @@ st.title("Carbon Credits Retirement Analysis Dashboard")
 st.markdown("Analysis of retirement beneficiaries from 2020 onwards")
 
 # Read the CSV file
-df = pd.read_csv('../data/vcus.csv', low_memory=False)
+df = pd.read_csv('vcus.csv', low_memory=False)
 
 # Data preprocessing
 df['Retirement/Cancellation Date'] = pd.to_datetime(df['Retirement/Cancellation Date'], errors='coerce')
