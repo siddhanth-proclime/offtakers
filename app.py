@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 # Set page configuration
 st.set_page_config(page_title="Carbon Credits Retirement Analysis", layout="wide")
 
-st.title("Offtakers Dashboard")
-st.markdown("Carbon Credits Retirement Analysis")
+st.title("Buyers Dashboard")
+st.markdown("Carbon Credits Retirement Analysis - to be integrated")
 
 # Read the CSV file
 df = pd.read_csv('vcus.csv', low_memory=False)
