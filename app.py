@@ -128,11 +128,11 @@ if len(filtered_df) > 0:
     st.subheader(f"Top 5 Retirement Beneficiaries - Trend Analysis (by {date_granularity})")
     
     top_5 = pivot_table.head(5)
-    period_columns = [col for col in pivot_table.columns if col != 'Grand Total']
+    period_columns = [str(col) for col in pivot_table.columns if col != 'Grand Total']
     
     # Create line chart using Plotly
     fig = go.Figure()
-    
+
     for beneficiary in top_5.index:
         fig.add_trace(go.Scatter(
             x=period_columns,
@@ -143,8 +143,15 @@ if len(filtered_df) > 0:
             marker=dict(size=8)
         ))
     
+    # Update layout to treat the x-axis as categorical
     fig.update_layout(
-        xaxis_title=date_granularity,
+        xaxis=dict(
+            title=date_granularity,
+            type='category',  # Set x-axis type to 'category' to treat the periods as discrete categories
+            tickmode='array',  # Ensure that the ticks match the categories
+            tickvals=period_columns,  # Set the tick values explicitly
+            ticktext=period_columns,  # Set the tick labels to be the period columns
+        ),
         yaxis_title="Quantity Issued",
         hovermode='x unified',
         legend=dict(
@@ -157,6 +164,8 @@ if len(filtered_df) > 0:
         height=500,
         margin=dict(r=200)
     )
-    
+        
     st.plotly_chart(fig, use_container_width=True)
+    
+    # st.plotly_chart(fig, use_container_width=True)
     
