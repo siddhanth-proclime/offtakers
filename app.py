@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 # Set page configuration
 st.set_page_config(page_title="Carbon Credits Retirement Analysis", layout="wide")
 
-st.title("Carbon Credits Retirement Analysis Dashboard")
-st.markdown("Analysis of retirement beneficiaries from 2020 onwards")
+st.title("Offtakers Dashboard")
+st.markdown("Carbon Credits Retirement Analysis")
 
 # Read the CSV file
 df = pd.read_csv('../data/vcus.csv', low_memory=False)
@@ -51,6 +51,15 @@ selected_methodologies = st.sidebar.multiselect(
     help="Select one or more methodologies, or leave empty for 'All'"
 )
 
+# Country filter (multiselect)
+countries = sorted(df['Country/Area'].dropna().unique().tolist())
+selected_countries = st.sidebar.multiselect(
+    "Select Country/Countries",
+    options=countries,
+    default=[],
+    help="Country of the carbon project. Select one or more countries, or leave empty for 'All'"
+)
+
 # Apply filters
 filtered_df = df[
     (df['Retirement Year'] >= year_range[0]) & 
@@ -62,6 +71,9 @@ if len(selected_project_types) > 0:
 
 if len(selected_methodologies) > 0:
     filtered_df = filtered_df[filtered_df['Methodology'].isin(selected_methodologies)]
+
+if len(selected_countries) > 0:
+    filtered_df = filtered_df[filtered_df['Country/Area'].isin(selected_countries)]
 
 # Create pivot table
 if len(filtered_df) > 0:
